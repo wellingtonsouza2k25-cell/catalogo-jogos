@@ -278,6 +278,7 @@ h2 {
 
 .btn-modal-excluir:hover {
   background-color: #dc2626;
+<<<<<<< HEAD
 }
 
 .mensagemErro {
@@ -304,4 +305,6 @@ h2 {
   color: green;
   text-align: center;
 
+=======
+>>>>>>> 1083b877b9922ae0268633117765eaf56f0d85fc
 }
