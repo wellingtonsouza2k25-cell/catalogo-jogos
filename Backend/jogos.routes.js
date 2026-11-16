@@ -67,6 +67,7 @@ router.put("/api/jogos/:id", (req, res) => {
     const id = Number(req.params.id);
     const {titulo, plataforma, genero, anoLancamento} = req.body;
     const anoLancamentoNumero = Number(anoLancamento);
+    
     const jogo = db.prepare(`
         SELECT id 
         FROM jogos

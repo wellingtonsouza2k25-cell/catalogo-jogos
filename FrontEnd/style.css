@@ -18,10 +18,10 @@ body {
 /* Container principal para alinhar formulário e tabela */
 .dashboard-container {
   display: grid;
-  grid-template-columns: 1fr 2fr; /* Formulário ocupa 1 parte, tabela 2 partes */
-  gap: 32px; /* Espaçamento entre as seções */
+  grid-template-columns: 1fr 2fr;
+  gap: 32px;
   width: 100%;
-  max-width: 1200px; /* Largura máxima da página */
+  max-width: 1200px;
 }
 
 /* Estilo comum para os cards (Formulário e Tabela) */
@@ -40,7 +40,7 @@ h2 {
   font-weight: 600;
 }
 
-/* --- Estilos do Formulário (mantidos e ajustados) --- */
+/* --- Estilos do Formulário --- */
 .grupo-input {
   display: flex;
   flex-direction: column;
@@ -111,7 +111,7 @@ h2 {
   color: #374151;
 }
 
-/* --- Estilos da Tabela (NOVOS) --- */
+/* --- Estilos da Tabela --- */
 .tabela-jogos {
   width: 100%;
   border-collapse: separate;
@@ -119,62 +119,163 @@ h2 {
   font-size: 0.9rem;
 }
 
-/* Cabeçalho */
 .tabela-jogos th {
   text-align: left;
-  color: #6b7280; /* Cor do texto do cabeçalho */
+  color: #6b7280;
   font-weight: 500;
   padding: 12px 16px;
-  background-color: #f9fafb; /* Fundo leve no cabeçalho */
+  background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* Linhas e Células */
 .tabela-jogos td {
-  color: #1f2937; /* Cor do texto dos dados */
+  color: #1f2937;
   padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* Espaçamento e alinhamento de colunas específicas */
 .tabela-jogos th:first-child, .tabela-jogos td:first-child {
-  width: 50px; /* Coluna ID mais estreita */
-  color: #6b7280; /* ID um pouco mais cinza */
+  width: 50px;
+  color: #6b7280;
 }
 
 .tabela-jogos th:last-child, .tabela-jogos td:last-child {
-  text-align: center; /* Ações centralizadas */
+  text-align: center;
   width: 100px;
 }
 
-/* Botões de Ação (Ícones) */
 .td-acoes {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-acao {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-acao:hover {
-    background-color: #f3f4f6; /* Leve destaque ao passar o mouse */
+  background-color: #f3f4f6;
 }
 
 .btn-acao img {
-    width: 16px;
-    height: 16px;
+  width: 16px;
+  height: 16px;
 }
 
-/* Efeito hover na linha da tabela */
 .tabela-jogos tbody tr:hover {
-    background-color: #f9fafb;
+  background-color: #f9fafb;
+}
+
+/* --- Estilos dos Modais --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(17, 24, 39, 0.5);
+  display: none; /* Oculto por padrão */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-overlay.ativo {
+  display: flex;
+}
+
+.modal-card {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: aparecerModal 0.2s ease-out;
+}
+
+.modal-pequeno {
+  max-width: 400px;
+}
+
+@keyframes aparecerModal {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-texto {
+  font-size: 0.925rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-modal-cancelar {
+  padding: 10px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-modal-cancelar:hover {
+  background-color: #f3f4f6;
+}
+
+.btn-modal-salvar {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #2D7DE0, #4CBFA6);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-modal-salvar:hover {
+  opacity: 0.9;
+}
+
+.btn-modal-excluir {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-modal-excluir:hover {
+  background-color: #dc2626;
 }

@@ -1,34 +1,53 @@
-// Espera carregar o HTML por completo
 document.addEventListener("DOMContentLoaded", () => {
     const botaoSalvar = document.getElementById('btn-salvar');
-    const botaoCancelar = document.getElementById('btn-cancelar')
-    const botaoDeletar = document.getElementById('btn-deletar')
+    const botaoCancelar = document.getElementById('btn-cancelar');
     const tbody = document.querySelector('.tabela-jogos tbody');
 
-    // Função para adicionar novas linhas na tabela
-    function adicionarLinhaNaTabela(jogo) {
-        const novaLinha = document.createElement('tr');
+    // Elementos do Modal de Edição
+    const modalEditar = document.getElementById('modal-editar');
+    const btnFecharEditar = document.getElementById('btn-fechar-editar');
+    const btnConfirmarEditar = document.getElementById('btn-confirmar-editar');
 
-        novaLinha.innerHTML = `
+    // Elementos do Modal de Exclusão
+    const modalExcluir = document.getElementById('modal-excluir');
+    const btnFecharExcluir = document.getElementById('btn-fechar-excluir');
+    const btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
+    const spanNomeExcluir = document.getElementById('excluir-nome-jogo');
+
+    // Variáveis de controle para saber qual jogo está sendo editado ou excluído
+    let idParaExcluir = null;
+    let linhaParaExcluir = null;
+    let linhaParaEditar = null;
+
+    // Cria uma linha na tabela com os dados do jogo
+    function criarElementoLinha(jogo) {
+        const tr = document.createElement('tr');
+        tr.dataset.id = jogo.id;
+
+        tr.innerHTML = `
             <td>${jogo.id}</td>
             <td>${jogo.titulo}</td>
             <td>${jogo.plataforma}</td>
-            <td>${jogo.genero}</td>
+            <td>${jogo.genero || ''}</td>
             <td>${jogo.anoLancamento}</td>
             <td class="td-acoes">
-                <button class="btn-acao edit" title="Editar">
-                    <img src="/FrontEnd/icons/edit.png" alt="Editar">
+                <button class="btn-acao edit" data-id="${jogo.id}" title="Editar">
+                    <img src="icons/edit.png" alt="Editar">
                 </button>
                 <button class="btn-acao delete" data-id="${jogo.id}" title="Excluir">
-                    <img src="/FrontEnd/icons/trash.png" alt="Excluir">
+                    <img src="icons/trash.png" alt="Excluir">
                 </button>
             </td>
         `;
+        return tr;
+    }
 
+    function adicionarLinhaNaTabela(jogo) {
+        const novaLinha = criarElementoLinha(jogo);
         tbody.appendChild(novaLinha);
     }
 
-    // Função para carregar jogos salvos no BD.
+    // Carregar jogos salvos no BD
     async function carregarJogos() {
         try {
             const resposta = await fetch("http://localhost:3000/api/jogos");
@@ -37,15 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const listaJogos = await resposta.json();
-            
-            // Limpa o tbody antes de preencher
             tbody.innerHTML = '';
 
-            // Cria uma linha para cada jogo salvo no banco
             listaJogos.forEach(jogo => {
                 adicionarLinhaNaTabela(jogo);
             });
-
         } catch (erro) {
             console.error("Erro ao buscar jogos:", erro.message);
         }
@@ -53,29 +68,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     carregarJogos();
 
-    botaoSalvar.addEventListener("click", async function (event) {
-
-        // Evita navegador recarregar
+    // --- CADASTRAR JOGO (POST) ---
+    botaoSalvar.addEventListener("click", async (event) => {
         event.preventDefault();
 
-        // Pega os valores dos inputs
         const titulo = document.getElementById('titulo').value;
         const plataforma = document.getElementById('plataforma').value;
         const genero = document.getElementById('genero').value;
         const anoLancamento = document.getElementById('ano').value;
 
-        // Monta o objeto que vai ser enviado para o Backend
         const dadosJogo = {
-            titulo, plataforma, genero, anoLancamento: Number(anoLancamento)
-        }
+            titulo,
+            plataforma,
+            genero,
+            anoLancamento: Number(anoLancamento)
+        };
 
         try {
-            // Envia a requisição POST para a API
             const resposta = await fetch("http://localhost:3000/api/jogos", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dadosJogo)
             });
 
@@ -85,61 +97,153 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const resultado = await resposta.json();
-
             adicionarLinhaNaTabela(resultado);
-            
+
             alert("Jogo cadastrado com sucesso!");
-
-            document.getElementById('titulo').value = '';
-            document.getElementById('plataforma').value = '';
-            document.getElementById('genero').value = '';
-            document.getElementById('ano').value = '';
-
+            limparFormularioCadastro();
         } catch (erro) {
             console.log("Erro na requisição", erro.message);
             alert("Erro: " + erro.message);
         }
     });
 
-    botaoCancelar.addEventListener("click", async function (event) {
-
+    function limparFormularioCadastro() {
         document.getElementById('titulo').value = '';
         document.getElementById('plataforma').value = '';
         document.getElementById('genero').value = '';
         document.getElementById('ano').value = '';
+    }
 
-    });
+    botaoCancelar.addEventListener("click", limparFormularioCadastro);
 
-    tbody.addEventListener("click", async (event) => {
-
+    // --- CLIQUES NA TABELA (ABRIR MODAL DE EDITAR OU EXCLUIR) ---
+    tbody.addEventListener("click", (event) => {
+        const botaoEditar = event.target.closest('.edit');
         const botaoDeletar = event.target.closest('.delete');
 
-        if(!botaoDeletar) return;
+        // 1. Abrir Modal de Edição
+        if (botaoEditar) {
+            const tr = botaoEditar.closest('tr');
+            const celulas = tr.querySelectorAll('td');
 
-        const idJogo = botaoDeletar.dataset.id;
+            linhaParaEditar = tr;
+            document.getElementById('edit-id').value = botaoEditar.dataset.id;
+            document.getElementById('edit-titulo').value = celulas[1].textContent;
+            document.getElementById('edit-plataforma').value = celulas[2].textContent;
+            document.getElementById('edit-genero').value = celulas[3].textContent;
+            document.getElementById('edit-ano').value = celulas[4].textContent;
 
-        const confirmou = confirm("Tem certeza que deseja excluir este jogo?");
-        
-        if (!confirmou) return;
+            modalEditar.classList.add('ativo');
+            return;
+        }
+
+        // 2. Abrir Modal de Exclusão
+        if (botaoDeletar) {
+            const tr = botaoDeletar.closest('tr');
+            const tituloJogo = tr.querySelectorAll('td')[1].textContent;
+
+            idParaExcluir = botaoDeletar.dataset.id;
+            linhaParaExcluir = tr;
+            spanNomeExcluir.textContent = `"${tituloJogo}"`;
+
+            modalExcluir.classList.add('ativo');
+        }
+    });
+
+    // --- SALVAR EDIÇÃO (PUT) ---
+    btnConfirmarEditar.addEventListener("click", async () => {
+        const idJogo = document.getElementById('edit-id').value;
+        const dadosAtualizados = {
+            titulo: document.getElementById('edit-titulo').value,
+            plataforma: document.getElementById('edit-plataforma').value,
+            genero: document.getElementById('edit-genero').value,
+            anoLancamento: Number(document.getElementById('edit-ano').value)
+        };
 
         try {
             const resposta = await fetch(`http://localhost:3000/api/jogos/${idJogo}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dadosAtualizados)
+            });
+
+            if (!resposta.ok) {
+                const erroData = await resposta.json();
+                throw new Error(erroData.erro || "Erro ao atualizar o jogo.");
+            }
+
+            const jogoAtualizado = await resposta.json();
+
+            // Atualiza os dados diretamente na linha da tabela sem precisar recarregar a página
+            if (linhaParaEditar) {
+                const celulas = linhaParaEditar.querySelectorAll('td');
+                celulas[1].textContent = jogoAtualizado.titulo;
+                celulas[2].textContent = jogoAtualizado.plataforma;
+                celulas[3].textContent = jogoAtualizado.genero || '';
+                celulas[4].textContent = jogoAtualizado.anoLancamento;
+            }
+
+            fecharModalEditar();
+        } catch (erro) {
+            console.error("Erro ao editar:", erro.message);
+            alert("Erro: " + erro.message);
+        }
+    });
+
+    // --- CONFIRMAR EXCLUSÃO (DELETE) ---
+    btnConfirmarExcluir.addEventListener("click", async () => {
+        if (!idParaExcluir) return;
+
+        try {
+            const resposta = await fetch(`http://localhost:3000/api/jogos/${idParaExcluir}`, {
                 method: "DELETE"
             });
 
-            if(!resposta.ok) {
+            if (!resposta.ok) {
                 const erroData = await resposta.json();
                 throw new Error(erroData.erro || "Erro ao excluir o jogo.");
             }
 
-            console.log("Jogo apagado do banco com sucesso!");
+            if (linhaParaExcluir) {
+                linhaParaExcluir.remove();
+            }
 
-            botaoDeletar.closest('tr').remove();
-
+            fecharModalExcluir();
         } catch (erro) {
             console.error("Erro ao deletar:", erro.message);
             alert("Erro: " + erro.message);
         }
-    })
+    });
 
-})
+    // --- FUNÇÕES PARA FECHAR OS MODAIS ---
+    function fecharModalEditar() {
+        modalEditar.classList.remove('ativo');
+        linhaParaEditar = null;
+    }
+
+    function fecharModalExcluir() {
+        modalExcluir.classList.remove('ativo');
+        idParaExcluir = null;
+        linhaParaExcluir = null;
+    }
+
+    btnFecharEditar.addEventListener("click", fecharModalEditar);
+    btnFecharExcluir.addEventListener("click", fecharModalExcluir);
+
+    // Fechar ao clicar fora do card (no fundo escuro)
+    modalEditar.addEventListener("click", (e) => {
+        if (e.target === modalEditar) fecharModalEditar();
+    });
+
+    modalExcluir.addEventListener("click", (e) => {
+        if (e.target === modalExcluir) fecharModalExcluir();
+    });
+
+    // Fechar ao pressionar a tecla ESC
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            fecharModalEditar();
+            fecharModalExcluir();
+        }
+    });
+});
