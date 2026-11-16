@@ -98,30 +98,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const resultado = await resposta.json();
             adicionarLinhaNaTabela(resultado);
-
-<<<<<<< HEAD
             document.getElementById("messagemCadastrado").style.display = "flex";
 
             limparFormularioCadastro();
         } catch (erro) {
             console.log("Erro na requisição", erro.message);
-            
-            const mensagemErro = document.getElementById("mensagemErro");
 
+            const mensagemErro = document.getElementById("mensagemErro");
             mensagemErro.style.display = "flex"
 
             setTimeout(() => {
                 mensagemErro.style.display = "none"
             }, 3000);
-            
-
-=======
-            alert("Jogo cadastrado com sucesso!");
-            limparFormularioCadastro();
-        } catch (erro) {
-            console.log("Erro na requisição", erro.message);
             alert("Erro: " + erro.message);
->>>>>>> 1083b877b9922ae0268633117765eaf56f0d85fc
         }
     });
 
