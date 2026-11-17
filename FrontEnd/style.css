@@ -280,29 +280,7 @@ h2 {
   background-color: #dc2626;
 }
 
-.mensagemErro {
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.mensagemErro p {
-  font-size: 14px;
+.mesagemErro {
+  text-align: center;
   color: red;
-  text-align: center;
-
-}
-
-.messagemCadastrado {
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.messagemCadastrado p {
-  font-size: 14px;
-  color: green;
-  text-align: center;
-
-
 }

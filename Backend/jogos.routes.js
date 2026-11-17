@@ -45,7 +45,7 @@ router.post("/api/jogos", (req, res) => {
 
     if (!titulo || !plataforma || !anoLancamento) {
         return res.status(400).json({ 
-            erro: "Título, plataforma e ano de lançamento são obrigatórios." 
+            erro: "Dados obrigatórios ausentes." 
         });
     }
 

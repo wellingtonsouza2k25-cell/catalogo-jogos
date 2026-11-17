@@ -102,15 +102,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             limparFormularioCadastro();
         } catch (erro) {
-            console.log("Erro na requisição", erro.message);
+           const mensagemErro = document.getElementById("mesagemErro");
 
-            const mensagemErro = document.getElementById("mensagemErro");
-            mensagemErro.style.display = "flex"
+           mensagemErro.textContent = erro.message;
 
-            setTimeout(() => {
-                mensagemErro.style.display = "none"
-            }, 3000);
-            alert("Erro: " + erro.message);
+           setTimeout(() => {
+            mensagemErro.textContent = "";
+           }, 2000);
         }
     });
 
