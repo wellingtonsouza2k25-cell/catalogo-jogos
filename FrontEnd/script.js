@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const botaoSalvar = document.getElementById('btn-salvar');
     const botaoCancelar = document.getElementById('btn-cancelar');
     const tbody = document.querySelector('.tabela-jogos tbody');
+    const campoBusca = document.getElementById('busca-id');
+    const mensagemSemResultados = document.getElementById('sem-resultados');
 
     // Elementos do Modal de Edição
     const modalEditar = document.getElementById('modal-editar');
@@ -19,6 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let linhaParaExcluir = null;
     let linhaParaEditar = null;
 
+    // Evita que textos digitados (ex.: "<b>") sejam interpretados como HTML
+    function escaparHtml(valor) {
+        const div = document.createElement('div');
+        div.textContent = valor ?? '';
+        return div.innerHTML;
+    }
+
     // Cria uma linha na tabela com os dados do jogo
     function criarElementoLinha(jogo) {
         const tr = document.createElement('tr');
@@ -26,10 +35,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         tr.innerHTML = `
             <td>${jogo.id}</td>
-            <td>${jogo.titulo}</td>
-            <td>${jogo.plataforma}</td>
-            <td>${jogo.genero || ''}</td>
-            <td>${jogo.anoLancamento}</td>
+            <td>${escaparHtml(jogo.titulo)}</td>
+            <td>${escaparHtml(jogo.plataforma)}</td>
+            <td>${escaparHtml(jogo.genero)}</td>
+            <td>${escaparHtml(jogo.anoLancamento)}</td>
             <td class="td-acoes">
                 <button class="btn-acao edit" data-id="${jogo.id}" title="Editar">
                     <img src="icons/edit.png" alt="Editar">
@@ -42,10 +51,40 @@ document.addEventListener("DOMContentLoaded", () => {
         return tr;
     }
 
+    // Insere a linha na posição certa pelo ID (um jogo novo pode herdar um ID "vazio" do meio da lista)
     function adicionarLinhaNaTabela(jogo) {
         const novaLinha = criarElementoLinha(jogo);
-        tbody.appendChild(novaLinha);
+        const linhaSeguinte = Array.from(tbody.children)
+            .find(linha => Number(linha.dataset.id) > Number(jogo.id));
+
+        tbody.insertBefore(novaLinha, linhaSeguinte || null);
     }
+
+    // --- PESQUISA POR ID ---
+    // Mostra só o jogo cujo ID é igual ao digitado; campo vazio mostra todos.
+    function aplicarFiltroPorId() {
+        const termo = campoBusca.value.trim();
+        const idBuscado = termo === '' ? null : String(Number(termo));
+        let encontrados = 0;
+
+        tbody.querySelectorAll('tr').forEach(linha => {
+            const corresponde = idBuscado === null || linha.dataset.id === idBuscado;
+            linha.hidden = !corresponde;
+            if (corresponde) encontrados++;
+        });
+
+        if (idBuscado !== null && encontrados === 0) {
+            mensagemSemResultados.textContent = `Nenhum jogo encontrado com o ID ${idBuscado}.`;
+            mensagemSemResultados.hidden = false;
+        } else {
+            mensagemSemResultados.hidden = true;
+        }
+    }
+
+    campoBusca.addEventListener('input', () => {
+        campoBusca.value = campoBusca.value.replace(/\D/g, ''); // só números
+        aplicarFiltroPorId();
+    });
 
     // Carregar jogos salvos no BD
     async function carregarJogos() {
@@ -61,6 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
             listaJogos.forEach(jogo => {
                 adicionarLinhaNaTabela(jogo);
             });
+            aplicarFiltroPorId();
         } catch (erro) {
             console.error("Erro ao buscar jogos:", erro.message);
         }
@@ -98,9 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const resultado = await resposta.json();
             adicionarLinhaNaTabela(resultado);
-            document.getElementById("messagemCadastrado").style.display = "flex";
+            aplicarFiltroPorId();
 
             limparFormularioCadastro();
+            mostrarMensagemSucesso(`Jogo cadastrado com sucesso! (ID ${resultado.id})`);
         } catch (erro) {
            const mensagemErro = document.getElementById("mesagemErro");
 
@@ -111,6 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {
            }, 2000);
         }
     });
+
+    function mostrarMensagemSucesso(texto) {
+        const mensagemSucesso = document.getElementById("mensagemSucesso");
+
+        mensagemSucesso.textContent = texto;
+
+        setTimeout(() => {
+            mensagemSucesso.textContent = "";
+        }, 2000);
+    }
 
     function limparFormularioCadastro() {
         document.getElementById('titulo').value = '';
@@ -212,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (linhaParaExcluir) {
                 linhaParaExcluir.remove();
             }
+            aplicarFiltroPorId();
 
             fecharModalExcluir();
         } catch (erro) {
