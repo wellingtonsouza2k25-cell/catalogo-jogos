@@ -1,37 +1,114 @@
-
 const express = require("express");
 const router = express.Router();
 const db = require("./database");
 
-let jogos = [];
+// ---------- Consultas reutilizáveis ----------
+
+const buscarTodos = db.prepare(`
+    SELECT id, titulo, plataforma, genero, anoLancamento
+    FROM jogos
+    ORDER BY id
+`);
+
+const buscarPorId = db.prepare(`
+    SELECT id, titulo, plataforma, genero, anoLancamento
+    FROM jogos
+    WHERE id = ?
+`);
+
+// Menor ID livre: se o 1 não existe, é o 1; senão, é o primeiro "buraco" na
+// sequência (ex.: existem 1, 2, 4 -> devolve 3) ou, sem buracos, o maior ID + 1.
+const buscarMenorIdLivre = db.prepare(`
+    SELECT CASE
+        WHEN NOT EXISTS (SELECT 1 FROM jogos WHERE id = 1) THEN 1
+        ELSE (
+            SELECT MIN(j.id) + 1
+            FROM jogos j
+            WHERE NOT EXISTS (SELECT 1 FROM jogos x WHERE x.id = j.id + 1)
+        )
+    END AS id
+`);
+
+const inserirJogo = db.prepare(`
+    INSERT INTO jogos (id, titulo, plataforma, genero, anoLancamento)
+    VALUES (?, ?, ?, ?, ?)
+`);
+
+const atualizarJogo = db.prepare(`
+    UPDATE jogos
+    SET titulo = ?, plataforma = ?, genero = ?, anoLancamento = ?
+    WHERE id = ?
+`);
+
+const excluirJogo = db.prepare(`
+    DELETE FROM jogos
+    WHERE id = ?
+`);
+
+// Escolher o ID e inserir acontecem juntos, na mesma transação.
+const cadastrarJogo = db.transaction((dados) => {
+    const { id } = buscarMenorIdLivre.get();
+    inserirJogo.run(id, dados.titulo, dados.plataforma, dados.genero, dados.anoLancamento);
+    return id;
+});
+
+// ---------- Validações compartilhadas (POST e PUT usam as mesmas regras) ----------
+
+function lerId(valor) {
+    const id = Number(valor);
+    return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function textoLimpo(valor) {
+    return typeof valor === "string" ? valor.trim() : "";
+}
+
+function validarJogo(corpo) {
+    const { titulo, plataforma, genero, anoLancamento } = corpo ?? {};
+
+    const tituloLimpo = textoLimpo(titulo);
+    const plataformaLimpa = textoLimpo(plataforma);
+    const generoLimpo = textoLimpo(genero);
+    const ano = Number(anoLancamento);
+
+    // O título só precisa ter 1 caractere (depois de remover espaços das pontas)
+    if (!tituloLimpo || !plataformaLimpa || !anoLancamento) {
+        return { erro: "Dados obrigatórios ausentes." };
+    }
+
+    if (!Number.isInteger(ano) || ano <= 0) {
+        return { erro: "O ano de lançamento deve ser um número inteiro positivo." };
+    }
+
+    return {
+        dados: {
+            titulo: tituloLimpo,
+            plataforma: plataformaLimpa,
+            genero: generoLimpo || null,
+            anoLancamento: ano
+        }
+    };
+}
+
+// ---------- Rotas ----------
 
 router.get("/api/jogos", (req, res) => {
-    const jogos = db.prepare(`
-        SELECT id, titulo, plataforma, genero, anoLancamento
-        FROM jogos
-        ORDER BY id
-    `).all();
-
-    res.json(jogos);
+    res.json(buscarTodos.all());
 });
 
 router.get("/api/jogos/:id", (req, res) => {
-    const id = Number(req.params.id);
-    
-    if (!id) {
-        res.status(400).json({
-            erro: "O ID deve ser um número inteiro positivo."
-        })
-    };
+    const id = lerId(req.params.id);
 
-    const jogo = db.prepare(`
-        SELECT id, titulo, plataforma, genero, anoLancamento
-        FROM jogos
-        WHERE id = ?
-    `).get(id);
-    
-    if(!jogo) {
-        res.status(404).json({
+    if (!id) {
+        return res.status(400).json({
+            erro: "O ID deve ser um número inteiro positivo."
+        });
+    }
+
+    const jogo = buscarPorId.get(id);
+
+    if (!jogo) {
+        return res.status(404).json({
             erro: "Jogo não encontrado."
         });
     }
@@ -40,100 +117,61 @@ router.get("/api/jogos/:id", (req, res) => {
 });
 
 router.post("/api/jogos", (req, res) => {
-    const {titulo, plataforma, genero, anoLancamento} = req.body;
-    const anoLancamentoNumero = Number(anoLancamento);
+    const { erro, dados } = validarJogo(req.body);
 
-    if (!titulo || !plataforma || !anoLancamento) {
-        return res.status(400).json({ 
-            erro: "Dados obrigatórios ausentes." 
-        });
+    if (erro) {
+        return res.status(400).json({ erro });
     }
 
-    const jogo = db.prepare(`
-        INSERT INTO jogos (titulo, plataforma, genero, anoLancamento)
-        VALUES (?, ?, ?, ?)
-    `).run(titulo.trim(), plataforma, genero, anoLancamentoNumero);
+    const idCriado = cadastrarJogo(dados);
 
-    const jogoCriado = db.prepare(`
-        SELECT id, titulo, plataforma, genero, anoLancamento
-        FROM jogos
-        WHERE id = ?
-    `).get(jogo.lastInsertRowid);
-
-    res.status(201).json(jogoCriado);
+    res.status(201).json(buscarPorId.get(idCriado));
 });
 
 router.put("/api/jogos/:id", (req, res) => {
-    const id = Number(req.params.id);
-    const {titulo, plataforma, genero, anoLancamento} = req.body;
-    const anoLancamentoNumero = Number(anoLancamento);
-    
-    const jogo = db.prepare(`
-        SELECT id 
-        FROM jogos
-        WHERE id = ?
-    `).get(id);
+    const id = lerId(req.params.id);
 
-    if(!id) {
+    if (!id) {
         return res.status(400).json({
-            erro: "ID inválido."
+            erro: "O ID deve ser um número inteiro positivo."
         });
     }
 
-    if (titulo.trim().length < 3) {
-        return res.status(400).json({
-            erro: "O nome deve ter pelo menos 3 caracteres."
-        });
+    const { erro, dados } = validarJogo(req.body);
+
+    if (erro) {
+        return res.status(400).json({ erro });
     }
 
-    if (!Number.isInteger(anoLancamentoNumero) || anoLancamentoNumero <= 0) {
-        return res.status(400).json({
-            erro: "O ano lançamento deve ser um número inteiro positivo"
-        });
-    }
-
-    if (!jogo) {
+    if (!buscarPorId.get(id)) {
         return res.status(404).json({
             erro: "Jogo não encontrado."
         });
     }
 
-    db.prepare(`
-        UPDATE jogos
-        SET titulo = ?, plataforma = ?, genero = ?, anoLancamento = ?
-        WHERE id = ?
-    `).run(titulo, plataforma, genero, anoLancamentoNumero, id);
+    atualizarJogo.run(dados.titulo, dados.plataforma, dados.genero, dados.anoLancamento, id);
 
-    return res.json(
-        db.prepare(`
-            SELECT id, titulo, plataforma, genero, anoLancamento
-            FROM jogos
-            WHERE id = ?
-        `).get(id)
-    );
-
+    res.json(buscarPorId.get(id));
 });
 
 router.delete("/api/jogos/:id", (req, res) => {
-    const id = Number(req.params.id);
-    const jogo = db.prepare(`
-        SELECT id 
-        FROM jogos
-        WHERE id = ?
-    `).get(id);
+    const id = lerId(req.params.id);
 
-    if (!jogo) {
+    if (!id) {
+        return res.status(400).json({
+            erro: "O ID deve ser um número inteiro positivo."
+        });
+    }
+
+    if (!buscarPorId.get(id)) {
         return res.status(404).json({
             erro: "Jogo não encontrado."
         });
     }
 
-    db.prepare(`
-        DELETE FROM jogos
-        WHERE id = ?
-    `).run(id);
+    excluirJogo.run(id);
 
-    res.json("Jogo excluído com sucesso.");
+    res.json({ mensagem: "Jogo excluído com sucesso." });
 });
 
 module.exports = router;
