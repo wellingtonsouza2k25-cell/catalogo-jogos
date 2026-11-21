@@ -7,7 +7,6 @@ db.pragma('foreign_keys = ON');
 db.exec(`
     CREATE TABLE IF NOT EXISTS jogos (
         id INTEGER PRIMARY KEY,
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT NOT NULL,
         plataforma TEXT NOT NULL,
         genero TEXT,
