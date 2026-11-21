@@ -19,7 +19,7 @@ router.get("/api/jogos/:id", (req, res) => {
     const id = Number(req.params.id);
     
     if (!id) {
-        res.status(400).json({
+        return res.status(400).json({
             erro: "O ID deve ser um número inteiro positivo."
         })
     };
@@ -31,12 +31,12 @@ router.get("/api/jogos/:id", (req, res) => {
     `).get(id);
     
     if(!jogo) {
-        res.status(404).json({
+        return res.status(404).json({
             erro: "Jogo não encontrado."
         });
     }
 
-    res.json(jogo);
+    return res.json(jogo);
 });
 
 router.post("/api/jogos", (req, res) => {
