@@ -68,6 +68,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
     carregarJogos();
 
+    // --- PESQUISAR JOGO POR ID (GET /api/jogos/:id) ---
+    const inputPesquisa = document.getElementById('pesquisarID');
+    let timerPesquisa;
+
+    async function buscarJogoPorId() {
+        if (!inputPesquisa) return;
+
+        const termo = inputPesquisa.value.trim();
+
+        // Se apagar a pesquisa, recarrega todos os jogos
+        if (termo === '') {
+            carregarJogos();
+            return;
+        }
+
+        const id = Number(termo);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center;">Digite um ID numérico válido.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        try {
+            const resposta = await fetch(`http://localhost:3000/api/jogos/${id}`);
+
+            if (!resposta.ok) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center;">Nenhum jogo encontrado com o ID ${id}.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const jogo = await resposta.json();
+            tbody.innerHTML = '';
+            adicionarLinhaNaTabela(jogo);
+        } catch (erro) {
+            console.error("Erro ao buscar jogo por ID:", erro.message);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center;">Erro ao consultar o servidor.</td>
+                </tr>
+            `;
+        }
+    }
+
+    if (inputPesquisa) {
+        inputPesquisa.addEventListener("input", () => {
+            clearTimeout(timerPesquisa);
+            timerPesquisa = setTimeout(buscarJogoPorId, 250);
+        });
+
+        inputPesquisa.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                clearTimeout(timerPesquisa);
+                buscarJogoPorId();
+            }
+        });
+    }
+
     // --- CADASTRAR JOGO (POST) ---
     botaoSalvar.addEventListener("click", async (event) => {
         event.preventDefault();
@@ -97,14 +163,25 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const resultado = await resposta.json();
+
             adicionarLinhaNaTabela(resultado);
-            document.getElementById("messagemCadastrado").style.display = "flex";
+
+            const mensagemCadastrado = document.getElementById("mensagemAviso");
+
+            mensagemCadastrado.textContent = "Jogo cadastrado com sucesso!";
+            mensagemCadastrado.style.color = "blue";
+
+            setTimeout(() => {
+                mensagemCadastrado.textContent = "";
+            }, 2000);
 
             limparFormularioCadastro();
+
         } catch (erro) {
-           const mensagemErro = document.getElementById("mesagemErro");
+           const mensagemErro = document.getElementById("mensagemAviso");
 
            mensagemErro.textContent = erro.message;
+           mensagemErro.style.color = "red";
 
            setTimeout(() => {
             mensagemErro.textContent = "";

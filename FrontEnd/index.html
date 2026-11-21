@@ -39,31 +39,40 @@
 
 
             <div id="avisos" class="avisos">
-                <p id="mesagemErro" class="mesagemErro"></p>
+                <p id="mensagemAviso" class="mensagemAviso"></p>
             </div>
         </section>
 
         <!-- Tabela do Catálogo -->
         <section class="container-catalogo">
-            <h2>Catálogo de Jogos</h2>
 
+            <div class="cabecalhoCatalogo">
+                <h2>Catálogo de Jogos</h2>
 
-            
+                <div class="caixaPesquisa">
+                    <img class="lupa" src="/FrontEnd/icons/lupa.png" alt="">
+                    <input type="search" id="pesquisarID" class="pesquisarID" placeholder="Pesquisar jogo.">
+                </div>
+            </div>
 
-            <table class="tabela-jogos">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Plataforma</th>
-                        <th>Gênero</th>
-                        <th>Ano</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+            <div class="scrollCatalogo">
+                <table class="tabela-jogos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Plataforma</th>
+                            <th>Gênero</th>
+                            <th>Ano</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+
+                    
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
 

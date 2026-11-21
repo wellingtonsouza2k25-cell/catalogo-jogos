@@ -29,15 +29,37 @@ body {
 .container-catalogo {
   background-color: #ffffff;
   padding: 24px;
+  max-height: 540px;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.container-formulario h2{
+  font-size: 1.25rem;
+  color: #1f2937;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 h2 {
   font-size: 1.25rem;
   color: #1f2937;
-  margin-bottom: 20px;
   font-weight: 600;
+  text-align: center;
+}
+
+.caixaPesquisa {
+  display: flex;
+  align-items: center;
+
+}
+
+.caixaPesquisa img {
+  width: 30px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
 }
 
 /* --- Estilos do Formulário --- */
@@ -112,6 +134,23 @@ h2 {
 }
 
 /* --- Estilos da Tabela --- */
+
+.cabecalhoCatalogo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+}
+
+.cabecalhoCatalogo input {
+  padding: 12px;
+  border: 2px solid black;
+  outline: none;
+  border-radius: 10px;
+  width: 250px;
+
+}
+
 .tabela-jogos {
   width: 100%;
   border-collapse: separate;
@@ -142,6 +181,20 @@ h2 {
 .tabela-jogos th:last-child, .tabela-jogos td:last-child {
   text-align: center;
   width: 100px;
+}
+
+.scrollCatalogo {
+  max-height: 430px;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-right: 4px;
+}
+
+.tabela-jogos thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f8f9fa;
+  z-index: 1;
 }
 
 .td-acoes {
@@ -280,7 +333,7 @@ h2 {
   background-color: #dc2626;
 }
 
-.mesagemErro {
+.mensagemAviso {
   text-align: center;
   color: red;
 }
