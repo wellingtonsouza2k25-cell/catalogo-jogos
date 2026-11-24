@@ -24,8 +24,15 @@ body {
   max-width: 1200px;
 }
 
-/* Estilo comum para os cards (Formulário e Tabela) */
-.container-formulario,
+/* Estilo dos cards (Formulário e Tabela) */
+.container-formulario {
+  background-color: #ffffff;
+  padding: 24px;
+  height: fit-content;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
 .container-catalogo {
   background-color: #ffffff;
   padding: 24px;
@@ -34,7 +41,7 @@ body {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-.container-formulario h2{
+.container-formulario h2 {
   font-size: 1.25rem;
   color: #1f2937;
   font-weight: 600;
@@ -52,7 +59,6 @@ h2 {
 .caixaPesquisa {
   display: flex;
   align-items: center;
-
 }
 
 .caixaPesquisa img {
@@ -134,7 +140,6 @@ h2 {
 }
 
 /* --- Estilos da Tabela --- */
-
 .cabecalhoCatalogo {
   display: flex;
   align-items: center;
@@ -148,7 +153,6 @@ h2 {
   outline: none;
   border-radius: 10px;
   width: 250px;
-
 }
 
 .tabela-jogos {
@@ -173,12 +177,14 @@ h2 {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.tabela-jogos th:first-child, .tabela-jogos td:first-child {
+.tabela-jogos th:first-child,
+.tabela-jogos td:first-child {
   width: 50px;
   color: #6b7280;
 }
 
-.tabela-jogos th:last-child, .tabela-jogos td:last-child {
+.tabela-jogos th:last-child,
+.tabela-jogos td:last-child {
   text-align: center;
   width: 100px;
 }
@@ -235,7 +241,7 @@ h2 {
   width: 100%;
   height: 100%;
   background-color: rgba(17, 24, 39, 0.5);
-  display: none; /* Oculto por padrão */
+  display: none;
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -333,7 +339,33 @@ h2 {
   background-color: #dc2626;
 }
 
+/* --- Avisos --- */
+.avisos {
+  margin-top: 14px;
+  min-height: 24px;
+}
+
 .mensagemAviso {
   text-align: center;
-  color: red;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.mensagemAviso:empty,
+.mensagemAviso[hidden] {
+  display: none;
+}
+
+.mensagemAviso.sucesso {
+  color: #15803d;
+  background-color: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.mensagemAviso.erro {
+  color: #b91c1c;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
 }

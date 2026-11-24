@@ -14,7 +14,7 @@
             
             <div class="grupo-input">
                 <label for="titulo">Título do Jogo</label>
-                <input type="text" id="titulo" name="titulo"  placeholder="Ex: Minecraft" required>
+                <input type="text" id="titulo" name="titulo" placeholder="Ex: Minecraft" required>
             </div>
 
             <div class="grupo-input">
@@ -37,7 +37,6 @@
                 <button type="button" id="btn-cancelar" class="btn-cancelar">Cancelar</button>
             </div>
 
-
             <div id="avisos" class="avisos">
                 <p id="mensagemAviso" class="mensagemAviso"></p>
             </div>
@@ -45,12 +44,11 @@
 
         <!-- Tabela do Catálogo -->
         <section class="container-catalogo">
-
             <div class="cabecalhoCatalogo">
                 <h2>Catálogo de Jogos</h2>
 
                 <div class="caixaPesquisa">
-                    <img class="lupa" src="/FrontEnd/icons/lupa.png" alt="">
+                    <img class="lupa" src="icons/lupa.png" alt="">
                     <input type="search" id="pesquisarID" class="pesquisarID" placeholder="Pesquisar jogo.">
                 </div>
             </div>
@@ -67,11 +65,10 @@
                             <th>Ações</th>
                         </tr>
                     </thead>
-
-                    
                     <tbody>
                     </tbody>
                 </table>
+                <p id="mensagemSemResultados" class="mensagemAviso erro" hidden></p>
             </div>
         </section>
     </main>

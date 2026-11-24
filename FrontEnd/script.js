@@ -2,34 +2,43 @@ document.addEventListener("DOMContentLoaded", () => {
     const botaoSalvar = document.getElementById('btn-salvar');
     const botaoCancelar = document.getElementById('btn-cancelar');
     const tbody = document.querySelector('.tabela-jogos tbody');
+    const campoBusca = document.getElementById('pesquisarID');
+    const mensagemAviso = document.getElementById('mensagemAviso');
+    const mensagemSemResultados = document.getElementById('mensagemSemResultados');
 
-    // Elementos do Modal de Edição
     const modalEditar = document.getElementById('modal-editar');
     const btnFecharEditar = document.getElementById('btn-fechar-editar');
     const btnConfirmarEditar = document.getElementById('btn-confirmar-editar');
 
-    // Elementos do Modal de Exclusão
     const modalExcluir = document.getElementById('modal-excluir');
     const btnFecharExcluir = document.getElementById('btn-fechar-excluir');
     const btnConfirmarExcluir = document.getElementById('btn-confirmar-excluir');
     const spanNomeExcluir = document.getElementById('excluir-nome-jogo');
 
-    // Variáveis de controle para saber qual jogo está sendo editado ou excluído
     let idParaExcluir = null;
     let linhaParaExcluir = null;
     let linhaParaEditar = null;
+    let timerAviso = null;
 
-    // Cria uma linha na tabela com os dados do jogo
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function criarElementoLinha(jogo) {
         const tr = document.createElement('tr');
         tr.dataset.id = jogo.id;
 
         tr.innerHTML = `
             <td>${jogo.id}</td>
-            <td>${jogo.titulo}</td>
-            <td>${jogo.plataforma}</td>
-            <td>${jogo.genero || ''}</td>
-            <td>${jogo.anoLancamento}</td>
+            <td>${escaparHtml(jogo.titulo)}</td>
+            <td>${escaparHtml(jogo.plataforma)}</td>
+            <td>${escaparHtml(jogo.genero)}</td>
+            <td>${escaparHtml(jogo.anoLancamento)}</td>
             <td class="td-acoes">
                 <button class="btn-acao edit" data-id="${jogo.id}" title="Editar">
                     <img src="icons/edit.png" alt="Editar">
@@ -44,10 +53,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function adicionarLinhaNaTabela(jogo) {
         const novaLinha = criarElementoLinha(jogo);
-        tbody.appendChild(novaLinha);
+        const linhaSeguinte = Array.from(tbody.children)
+            .find(linha => Number(linha.dataset.id) > Number(jogo.id));
+
+        tbody.insertBefore(novaLinha, linhaSeguinte || null);
     }
 
-    // Carregar jogos salvos no BD
+    function aplicarFiltroPorId() {
+        const termo = campoBusca.value.trim();
+        const idBuscado = termo === '' ? null : String(Number(termo));
+        let encontrados = 0;
+
+        tbody.querySelectorAll('tr').forEach(linha => {
+            const corresponde = idBuscado === null || linha.dataset.id === idBuscado;
+            linha.hidden = !corresponde;
+            if (corresponde) encontrados++;
+        });
+
+        if (mensagemSemResultados) {
+            if (idBuscado !== null && encontrados === 0) {
+                mensagemSemResultados.textContent = `Nenhum jogo encontrado com o ID ${idBuscado}.`;
+                mensagemSemResultados.hidden = false;
+            } else {
+                mensagemSemResultados.textContent = '';
+                mensagemSemResultados.hidden = true;
+            }
+        }
+    }
+
+    campoBusca.addEventListener('input', () => {
+        campoBusca.value = campoBusca.value.replace(/\D/g, '');
+        aplicarFiltroPorId();
+    });
+
     async function carregarJogos() {
         try {
             const resposta = await fetch("http://localhost:3000/api/jogos");
@@ -61,6 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
             listaJogos.forEach(jogo => {
                 adicionarLinhaNaTabela(jogo);
             });
+            aplicarFiltroPorId();
         } catch (erro) {
             console.error("Erro ao buscar jogos:", erro.message);
         }
@@ -68,76 +107,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     carregarJogos();
 
-    // --- PESQUISAR JOGO POR ID (GET /api/jogos/:id) ---
-    const inputPesquisa = document.getElementById('pesquisarID');
-    let timerPesquisa;
+    function mostrarMensagemSucesso(texto) {
+        clearTimeout(timerAviso);
+        mensagemAviso.classList.remove('erro');
+        mensagemAviso.classList.add('sucesso');
+        mensagemAviso.textContent = texto;
 
-    async function buscarJogoPorId() {
-        if (!inputPesquisa) return;
-
-        const termo = inputPesquisa.value.trim();
-
-        // Se apagar a pesquisa, recarrega todos os jogos
-        if (termo === '') {
-            carregarJogos();
-            return;
-        }
-
-        const id = Number(termo);
-
-        if (!Number.isInteger(id) || id <= 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center;">Digite um ID numérico válido.</td>
-                </tr>
-            `;
-            return;
-        }
-
-        try {
-            const resposta = await fetch(`http://localhost:3000/api/jogos/${id}`);
-
-            if (!resposta.ok) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center;">Nenhum jogo encontrado com o ID ${id}.</td>
-                    </tr>
-                `;
-                return;
-            }
-
-            const jogo = await resposta.json();
-            tbody.innerHTML = '';
-            adicionarLinhaNaTabela(jogo);
-        } catch (erro) {
-            console.error("Erro ao buscar jogo por ID:", erro.message);
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center;">Erro ao consultar o servidor.</td>
-                </tr>
-            `;
-        }
+        timerAviso = setTimeout(() => {
+            mensagemAviso.textContent = "";
+            mensagemAviso.classList.remove('sucesso');
+        }, 3000);
     }
 
-    if (inputPesquisa) {
-        inputPesquisa.addEventListener("input", () => {
-            clearTimeout(timerPesquisa);
-            timerPesquisa = setTimeout(buscarJogoPorId, 250);
-        });
+    function mostrarMensagemErro(texto) {
+        clearTimeout(timerAviso);
+        mensagemAviso.classList.remove('sucesso');
+        mensagemAviso.classList.add('erro');
+        mensagemAviso.textContent = texto;
 
-        inputPesquisa.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                clearTimeout(timerPesquisa);
-                buscarJogoPorId();
-            }
-        });
+        timerAviso = setTimeout(() => {
+            mensagemAviso.textContent = "";
+            mensagemAviso.classList.remove('erro');
+        }, 3000);
     }
 
-    // --- CADASTRAR JOGO (POST) ---
-    botaoSalvar.addEventListener("click", async (event) => {
-        event.preventDefault();
-
+    botaoSalvar.addEventListener("click", async () => {
         const titulo = document.getElementById('titulo').value;
         const plataforma = document.getElementById('plataforma').value;
         const genero = document.getElementById('genero').value;
@@ -163,29 +157,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const resultado = await resposta.json();
-
             adicionarLinhaNaTabela(resultado);
-
-            const mensagemCadastrado = document.getElementById("mensagemAviso");
-
-            mensagemCadastrado.textContent = "Jogo cadastrado com sucesso!";
-            mensagemCadastrado.style.color = "blue";
-
-            setTimeout(() => {
-                mensagemCadastrado.textContent = "";
-            }, 2000);
+            aplicarFiltroPorId();
 
             limparFormularioCadastro();
-
+            mostrarMensagemSucesso(`Jogo cadastrado com sucesso! (ID ${resultado.id})`);
         } catch (erro) {
-           const mensagemErro = document.getElementById("mensagemAviso");
-
-           mensagemErro.textContent = erro.message;
-           mensagemErro.style.color = "red";
-
-           setTimeout(() => {
-            mensagemErro.textContent = "";
-           }, 2000);
+            mostrarMensagemErro(erro.message);
         }
     });
 
@@ -194,16 +172,15 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('plataforma').value = '';
         document.getElementById('genero').value = '';
         document.getElementById('ano').value = '';
+        document.getElementById('titulo').focus();
     }
 
     botaoCancelar.addEventListener("click", limparFormularioCadastro);
 
-    // --- CLIQUES NA TABELA (ABRIR MODAL DE EDITAR OU EXCLUIR) ---
     tbody.addEventListener("click", (event) => {
         const botaoEditar = event.target.closest('.edit');
         const botaoDeletar = event.target.closest('.delete');
 
-        // 1. Abrir Modal de Edição
         if (botaoEditar) {
             const tr = botaoEditar.closest('tr');
             const celulas = tr.querySelectorAll('td');
@@ -219,7 +196,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 2. Abrir Modal de Exclusão
         if (botaoDeletar) {
             const tr = botaoDeletar.closest('tr');
             const tituloJogo = tr.querySelectorAll('td')[1].textContent;
@@ -232,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- SALVAR EDIÇÃO (PUT) ---
     btnConfirmarEditar.addEventListener("click", async () => {
         const idJogo = document.getElementById('edit-id').value;
         const dadosAtualizados = {
@@ -256,7 +231,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const jogoAtualizado = await resposta.json();
 
-            // Atualiza os dados diretamente na linha da tabela sem precisar recarregar a página
             if (linhaParaEditar) {
                 const celulas = linhaParaEditar.querySelectorAll('td');
                 celulas[1].textContent = jogoAtualizado.titulo;
@@ -266,18 +240,20 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             fecharModalEditar();
+            mostrarMensagemSucesso("Jogo atualizado com sucesso!");
         } catch (erro) {
             console.error("Erro ao editar:", erro.message);
-            alert("Erro: " + erro.message);
+            mostrarMensagemErro(erro.message);
         }
     });
 
-    // --- CONFIRMAR EXCLUSÃO (DELETE) ---
     btnConfirmarExcluir.addEventListener("click", async () => {
         if (!idParaExcluir) return;
 
+        const idExcluido = idParaExcluir;
+
         try {
-            const resposta = await fetch(`http://localhost:3000/api/jogos/${idParaExcluir}`, {
+            const resposta = await fetch(`http://localhost:3000/api/jogos/${idExcluido}`, {
                 method: "DELETE"
             });
 
@@ -286,18 +262,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(erroData.erro || "Erro ao excluir o jogo.");
             }
 
+            const resultado = await resposta.json();
+            const textoSucesso = typeof resultado === "string"
+                ? `Jogo excluído com sucesso! (ID ${idExcluido})`
+                : (resultado?.mensagem || `Jogo excluído com sucesso! (ID ${idExcluido})`);
+
             if (linhaParaExcluir) {
                 linhaParaExcluir.remove();
             }
+            aplicarFiltroPorId();
 
             fecharModalExcluir();
+            mostrarMensagemSucesso(textoSucesso);
         } catch (erro) {
             console.error("Erro ao deletar:", erro.message);
-            alert("Erro: " + erro.message);
+            mostrarMensagemErro(erro.message);
         }
     });
 
-    // --- FUNÇÕES PARA FECHAR OS MODAIS ---
     function fecharModalEditar() {
         modalEditar.classList.remove('ativo');
         linhaParaEditar = null;
@@ -312,7 +294,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnFecharEditar.addEventListener("click", fecharModalEditar);
     btnFecharExcluir.addEventListener("click", fecharModalExcluir);
 
-    // Fechar ao clicar fora do card (no fundo escuro)
     modalEditar.addEventListener("click", (e) => {
         if (e.target === modalEditar) fecharModalEditar();
     });
@@ -321,7 +302,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target === modalExcluir) fecharModalExcluir();
     });
 
-    // Fechar ao pressionar a tecla ESC
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             fecharModalEditar();
